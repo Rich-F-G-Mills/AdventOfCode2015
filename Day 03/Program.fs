@@ -6,26 +6,32 @@ type Movement =
     | Down
     | Left
     | Right
+
     static member fromChar = function
         | '^'  -> Up
         | 'v'  -> Down
         | '<'  -> Left
         | '>'  -> Right
         | _    -> failwith "Unexpected character!"
+
     static member toDelta = function
         | Up    -> (0, 1)
         | Down  -> (0, -1)
         | Left  -> (-1, 0)
         | Right -> (0, 1)
 
+
 type Location =
     | Location of X: int * Y: int
+
     static member origin = Location (0, 0)
+
 
 let inline (+) (Location (x, y)) (movement: Movement) =
     let (dx, dy) = movement |> Movement.toDelta
     
     Location (x + dx, y + dy)
+
 
 let countAtLeast1Visit locations =
     locations
@@ -39,7 +45,7 @@ let getHousesVisited =
     
 
 [<EntryPoint>]
-let main argv =
+let main _ =
     let input =
         File.ReadAllText "Inputs.txt"
         |> List.ofSeq

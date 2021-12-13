@@ -25,7 +25,7 @@ type MD5Hasher (prefix: string) =
 
 
 [<EntryPoint>]
-let main argv =
+let main _ =
     let hasher = MD5Hasher "iwrupvqb"
 
     let isValidPart1Hash =

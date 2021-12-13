@@ -1,10 +1,11 @@
 ﻿
-open System
 open System.IO
 open System.Text.RegularExpressions
 
+
 let splitter =
     Regex @"^(turn on|turn off|toggle)\s(\d+),(\d+)\sthrough\s(\d+),(\d+)$"
+
 
 type ChangeType =
     | Toggle
@@ -50,7 +51,7 @@ let part2Action change_type value =
 
 
 [<EntryPoint>]
-let main argv =  
+let main _ =  
     let instructions =
         File.ReadAllLines "Inputs.txt"
         |> List.ofArray

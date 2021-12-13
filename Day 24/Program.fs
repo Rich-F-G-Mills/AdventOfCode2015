@@ -1,7 +1,6 @@
-﻿// Learn more about F# at http://fsharp.org
-
-open System
+﻿
 open System.IO
+
 
 let rec find target allocated remaining =
     seq {
@@ -21,7 +20,7 @@ let rec find target allocated remaining =
         
 
 [<EntryPoint>]
-let main argv =
+let main _ =
     let inputs =
         File.ReadAllLines "Inputs.txt"
         |> List.ofArray
@@ -83,5 +82,4 @@ let main argv =
     |> printfn "Part 2 answer = %A"
 
 
-
-    0 // return an integer exit code
+    0

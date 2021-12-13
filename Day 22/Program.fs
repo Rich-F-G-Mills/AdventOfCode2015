@@ -2,7 +2,7 @@
 open System
 
 let BossStats =
-    {| HitPoints = 13; Damage = 8 |}
+    {| HitPoints = 51; Damage = 9 |}
 
 
 module Spell =
@@ -140,9 +140,10 @@ and ActiveGameState =
       BossHitPoints: int }
 
 and GameState =
-    | ActiveGame of ActiveGameState
-    | PlayerWonGame
+    | ActiveGame of State: ActiveGameState
+    | PlayerWonGame of ManaSpent: int
     | BossWonGame
+    | InvalidGame of Reason: string
 
 and ActiveSpell =
     { Type: Spell.Type
@@ -193,10 +194,7 @@ let updateGameStateForPlayer (newSpellType: Spell.Type) (state: GameState) =
         // Reset the armour adjustment, increment the turn index and update current player
         let state =
             { state with
-                LastPlayed =
-                    match state.LastPlayed with
-                    | Player -> failwith "Player cannot have consecutive turns."
-                    | Boss -> Player
+                LastPlayed = Player
                 TurnIdx = state.TurnIdx + 1
                 Armour = 0 }
             
@@ -205,35 +203,36 @@ let updateGameStateForPlayer (newSpellType: Spell.Type) (state: GameState) =
             state.ActiveSpells
             |> List.fold updateGameStateForSpell state
 
-        // Create a newly activated spell.
-        let newActiveSpell =
-            let spellAlreadyExists =
-                state.ActiveSpells
-                |> List.exists (fun { Type = spellType } ->
-                    spellType = newSpellType)
+        // Is the requested spell already active?
+        let spellAlreadyExists =
+            state.ActiveSpells
+            |> List.exists (fun { Type = spellType } ->
+                spellType = newSpellType)
 
-            if spellAlreadyExists then
-                failwith $"Cannot apply {newSpellType} as it is already in effect."
+        if spellAlreadyExists then
+            InvalidGame $"Cannot apply {newSpellType} as it is already in effect."
 
-            else
+        else
+            // Create a newly activated spell.
+            let newActiveSpell =
                 { Type = newSpellType; CastAtTurnIdx = state.TurnIdx }
 
-        // Update the list of active spells.
-        let state =
-            { state with
-                ActiveSpells = newActiveSpell :: state.ActiveSpells }
+            // Update the list of active spells.
+            let state =
+                { state with
+                    ActiveSpells = newActiveSpell :: state.ActiveSpells }
 
-        // Update for the impact of the newly activated spell and return.
-        let state =
-            updateGameStateForSpell state newActiveSpell
+            // Update for the impact of the newly activated spell and return.
+            let state =
+                updateGameStateForSpell state newActiveSpell
 
-        // Check to see if the game should still be active.
-        if state.Mana < 0 then
-            BossWonGame
-        elif state.BossHitPoints <= 0 then
-            PlayerWonGame
-        else
-            ActiveGame state
+            // Check to see if the game should still be active.
+            if state.Mana < 0 then
+                BossWonGame
+            elif state.BossHitPoints <= 0 then
+                PlayerWonGame state.ManaSpent
+            else
+                ActiveGame state
 
     | _ -> failwith "Cannot update a game that has already finished."
 
@@ -244,10 +243,7 @@ let updateGameStateForBoss (state: GameState) =
         // Reset the armour adjustment, increment the turn index and update current player
         let state =
             { state with
-                LastPlayed =
-                    match state.LastPlayed with
-                    | Boss -> failwith "Boss cannot have consecutive turns."
-                    | Player -> Boss
+                LastPlayed = Boss
                 TurnIdx = state.TurnIdx + 1
                 Armour = 0 }
             
@@ -258,42 +254,91 @@ let updateGameStateForBoss (state: GameState) =
 
         // Update for the boss' strike, assuming the boss is still alive after applying active spells.
         if state.BossHitPoints > 0 then
-            if BossStats.Damage >= state.HitPoints then
+            let state =
+                // Don't forget that boss attacks always deal at least 1 damage.
+                { state with
+                    HitPoints = state.HitPoints - Math.Max (BossStats.Damage - state.Armour, 1) }
+
+            // Check to see if the boss has defeated us.
+            if state.HitPoints <= 0 then
                 BossWonGame
             else
-                let state =
-                    // Don't forget that boss attacks always deal at least 1 damage.
-                    { state with
-                        HitPoints = state.HitPoints - Math.Max (BossStats.Damage - state.Armour, 1) }
-
                 ActiveGame state
         else
-            PlayerWonGame
+            PlayerWonGame state.ManaSpent
 
     | _ -> failwith "Cannot update a game that has already finished."
 
 
+let rec generateGames (gameState, depth) =
+    seq {
+        match gameState with
+        | ActiveGame _ when depth < 20 ->
+            yield! iterateGame (gameState, Spell.MagicMissile, depth + 1)
+            yield! iterateGame (gameState, Spell.Drain, depth + 1)
+            yield! iterateGame (gameState, Spell.Poison, depth + 1)
+            yield! iterateGame (gameState, Spell.Recharge, depth + 1)
+            yield! iterateGame (gameState, Spell.Shield, depth + 1)
+                
+        | PlayerWonGame manaSpent ->
+            yield manaSpent
+
+        | _ -> ()
+    }
+
+and iterateGame (gameState, newSpell, depth) =
+    seq {
+        match updateGameStateForPlayer newSpell gameState with
+        | ActiveGame _ as newActiveState ->
+            let newStateAfterBoss =
+                updateGameStateForBoss newActiveState
+
+            yield! generateGames (newStateAfterBoss, depth + 1)
+
+        | PlayerWonGame manaSpent ->
+            yield manaSpent
+
+        | _ -> ()
+    }        
+
+
 [<EntryPoint>]
-let main argv =
+let main _ =
     let startingState =
         { LastPlayed = Boss
           TurnIdx = -1
-          Mana = 250
+          Mana = 500
           ManaSpent = 0
-          HitPoints = 10
+          HitPoints = 50
           Armour = 0
           BossHitPoints = BossStats.HitPoints
           ActiveSpells = [] } |> ActiveGame
 
-    let gameActions = [
-        updateGameStateForPlayer Spell.Poison
-        updateGameStateForBoss
-        updateGameStateForPlayer Spell.MagicMissile
-    ]
+    //let gameActions_Test1 = [
+    //    updateGameStateForPlayer Spell.Poison
+    //    updateGameStateForBoss
+    //    updateGameStateForPlayer Spell.MagicMissile
+    //]
 
-    List.scan (>>) id gameActions
-    |> Seq.map ((|>) startingState)
-    |> Seq.skip 1
-    |> Seq.iter (printfn "%A\n\n")
+    //let gameActions_Test2 = [
+    //    updateGameStateForPlayer Spell.Recharge
+    //    updateGameStateForBoss
+    //    updateGameStateForPlayer Spell.Shield
+    //    updateGameStateForBoss
+    //    updateGameStateForPlayer Spell.Drain
+    //    updateGameStateForBoss
+    //    updateGameStateForPlayer Spell.Poison
+    //    updateGameStateForBoss
+    //    updateGameStateForPlayer Spell.MagicMissile
+    //]
+
+    generateGames (startingState, 0)
+    |> Seq.min
+    |> printfn "Part 1 answer = %i"
+
+    //List.scan (>>) id gameActions_Test2
+    //|> Seq.map ((|>) startingState)
+    //|> Seq.skip 1
+    //|> Seq.iter (printfn "%A\n\n")
 
     0

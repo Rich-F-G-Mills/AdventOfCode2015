@@ -1,12 +1,11 @@
-﻿// Learn more about F# at http://fsharp.org
-
+﻿
 open System
 open System.IO
 open System.Text.RegularExpressions
     
 
 [<EntryPoint>]
-let main argv =
+let main _ =
     let splitter =
         Regex @"^(\w+)\sto\s(\w+)\s=\s(\d+)$"
 
@@ -51,7 +50,6 @@ let main argv =
 
         chain [] places
 
-
     chains
     |> List.min
     |> printfn "Part 1 answer = %i"
@@ -60,4 +58,4 @@ let main argv =
     |> List.max
     |> printfn "Part 2 answer = %i"
 
-    0 // return an integer exit code
+    0

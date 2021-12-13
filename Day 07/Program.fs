@@ -1,29 +1,17 @@
-﻿// Learn more about F# at http://fsharp.org
-
-open System
+﻿
 open System.IO
-open FSharp.Reflection
 open FParsec
-open System.Diagnostics
+
 
 type Target =
     | Register of string
     | Literal of int16
+
     member this.getValue (results: Map<string, int16>) =
         match this with
         | Register r -> results.[r]
         | Literal l -> l
 
-let UnaryOps =
-    Map.empty<string, int16 -> int16>
-    |> Map.add "NOT" (fun x -> ~~~x)
-
-let BinaryOps =
-    Map.empty<string, int16 -> int16 -> int16>
-    |> Map.add "AND" (fun x y -> x &&& y)
-    |> Map.add "OR" (fun x y -> x ||| y)
-    |> Map.add "LSHIFT" (fun x y -> x <<< (int32 y))
-    |> Map.add "RSHIFT" (fun x y -> x >>> (int32 y))
 
 type Expr =
     | Binary of string * Target * Target
@@ -36,6 +24,18 @@ type Expr =
         | Unary (_, t1) -> [t1]
         | Target (t1) -> [t1])
         |> List.choose (function | Register r -> Some r | _ -> None)
+
+
+let UnaryOps =
+    Map.empty<string, int16 -> int16>
+    |> Map.add "NOT" (fun x -> ~~~x)
+
+let BinaryOps =
+    Map.empty<string, int16 -> int16 -> int16>
+    |> Map.add "AND" (fun x y -> x &&& y)
+    |> Map.add "OR" (fun x y -> x ||| y)
+    |> Map.add "LSHIFT" (fun x y -> x <<< (int32 y))
+    |> Map.add "RSHIFT" (fun x y -> x >>> (int32 y))
 
 
 let association =
@@ -87,8 +87,9 @@ let expr =
     <|> assign_expr
     .>>. association
 
+
 [<EntryPoint>]
-let main argv =
+let main _ =
     let parsed =
         File.ReadAllLines("Inputs.txt")
         |> List.ofArray
@@ -139,4 +140,4 @@ let main argv =
 
     printfn "%A" results.["a"]
 
-    0 // return an integer exit code
+    0

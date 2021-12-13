@@ -2,7 +2,7 @@
 open System.IO
 
 [<EntryPoint>]
-let main argv =
+let main _ =
     let mappedInput =
         File.ReadAllText "Inputs.txt"
         // Map each character recieved to the corresponding adjustment.

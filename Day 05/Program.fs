@@ -5,7 +5,8 @@ open System.IO
 let charIsVowel =
     let vowels = [|'a'; 'e'; 'i'; 'o'; 'u'|]
 
-    fun chr -> Array.contains chr vowels
+    fun chr ->
+        Array.contains chr vowels
 
 let hasThreeVowels =
     Seq.filter charIsVowel
@@ -19,7 +20,8 @@ let hasDoubles =
 let hasBadStrings =
     let badStrings = [|"ab"; "cd"; "pq"; "xy"|]
 
-    fun (str: string) -> badStrings |> Seq.exists (str.Contains)
+    fun (str: string) ->
+        badStrings |> Seq.exists (str.Contains)
 
 let hasTwoPairs =
     let rec findPairs =
@@ -43,7 +45,7 @@ let hasRepeatedLetter =
 
 
 [<EntryPoint>]
-let main argv =
+let main _ =
     let strings =
         File.ReadAllLines "Inputs.txt"    
 

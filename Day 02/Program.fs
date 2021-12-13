@@ -33,7 +33,7 @@ let dimSplitter (dim: string) =
 
 
 [<EntryPoint>]
-let main argv =
+let main _ =
     let dims =
         File.ReadAllLines "Inputs.txt"
         |> Array.map dimSplitter

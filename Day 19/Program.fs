@@ -59,7 +59,7 @@ let generateCombinationsForMapping source before after =
 
 
 [<EntryPoint>]
-let main argv =
+let main _ =
     let target =
         File.ReadAllText("Target.txt")
 

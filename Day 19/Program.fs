@@ -10,10 +10,13 @@ open System.Buffers
 type Mapping =
     { From: string
       To: string
+      // For the second part, we're interested in knowing the change in molecule
+      // length after a substitution.
       ToCount: int }
 
 
-let private extractMapping =
+// Will convert a row from the input file into a corresponding Mapping instance.
+let extractMapping =
     function
     | Regex.Match RegexOptions.None @"^(\w+)\s=>\s(\w+)$"
         { GroupValues = [ lhs; rhs ] } ->
@@ -25,13 +28,17 @@ let private extractMapping =
         None
 
 
-let private replaceSubStr length (newSubStr: string) (source: string) start =
+// Used String.Create to reduce allocations...
+// However, whether this was really necessary is debatable!
+let replaceSubStr length (newSubStr: string) (source: string) start =
     let newStrLength =
         source.Length + newSubStr.Length - length
 
     let state =
         struct {| Start = start; Length = length; NewSubStr = newSubStr; Source = source |}
 
+    // All state has to be passed to the span action to avoid the creation
+    // of closures which, in turn, lead to allocations.
     String.Create (newStrLength, state, SpanAction(fun output state ->
         let sourceSpan =
             state.Source.AsSpan()
@@ -41,6 +48,8 @@ let private replaceSubStr length (newSubStr: string) (source: string) start =
         sourceSpan.Slice(state.Start + state.Length).CopyTo(output.Slice(state.Start + state.NewSubStr.Length))
     ))
 
+
+// Generate all possible combinations when applying a mapping.
 let generateCombinationsForMapping source before after =
     let rec findNext startIdx =
         seq {
@@ -69,11 +78,12 @@ let main _ =
         |> Array.sortByDescending (fun { ToCount = count } -> count)        
 
     mappings
-    |> Seq.collect (fun  { From = from; To = to' } ->
+    |> Seq.collect (fun { From = from; To = to' } ->
         generateCombinationsForMapping target from to')
     |> Seq.distinct
     |> Seq.length
     |> printfn "Part 1 answer = %i"           
+
 
     // For part 2, we keep applying the mapping which results in the greatest reduction in molecules.
     let (result, mappingsApplied) =        

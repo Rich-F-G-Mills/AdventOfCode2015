@@ -18,7 +18,7 @@ let main _ =
 
     mappedInput
         |> Seq.scan (+) 0
-        // Find point at which Santa enters the basement.
+        // Keep taking elements until Santa enters the basement.
         |> Seq.takeWhile ((<) -1)
         |> Seq.length
         |> printfn "Part 2 answer = %A"

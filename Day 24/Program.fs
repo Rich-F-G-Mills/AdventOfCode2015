@@ -1,22 +1,43 @@
 ﻿
+open System
 open System.IO
 
+//// This could be adjusted so that it only ever yields ever smaller arrangements.
+//// Could be done using continuations?
+//let rec genPackageArrangements target allocated remaining =
+//    seq {
+//        match remaining with
+//        | [] -> ()
+//        | r::_ when r = target ->
+//            yield r::allocated
+//        | r::_ when r > target -> ()
+//        | r::rs ->
+//            // Generate all remaining combinations assuming r was selected.
+//            yield! (genPackageArrangements (target - r) (r::allocated) rs)
+//            // Generate all remaining combinations assuming r was NOT selected.
+//            yield! (genPackageArrangements target allocated rs)
+//    }
 
-let rec find target allocated remaining =
-    seq {
-        match remaining with
-        | [] -> yield! Seq.empty
-        | r::rs ->
-            if r = target then
-                yield r::allocated
+// This could be adjusted so that it only ever yields ever smaller arrangements.
+// Could be done using continuations?
+let rec genPackageArrangements target (allocated: int list) remaining cont maxLen =
+    match remaining with
+    | r::_ when r = target ->
+        seq {        
+            yield r::allocated
 
-            elif r > target then
-                yield! Seq.empty
+            yield! cont (allocated.Length + 1)
+        }
+    | r::rs when r < target && allocated.Length < maxLen ->
+        genPackageArrangements (target - r) (r::allocated) rs (fun mL -> genPackageArrangements target allocated rs cont mL) maxLen
+    | _ -> cont maxLen 
 
-            else // r < target 
-                yield! (find (target - r) (r::allocated) rs)
-                yield! (find target allocated rs)
-    }
+
+let findMinimalArrangement: int list seq -> int64 =
+    Seq.map (fun items -> items.Length, items |> List.map int64 |> List.reduce (*))
+    >> Seq.sort
+    >> Seq.head
+    >> snd
         
 
 [<EntryPoint>]
@@ -27,59 +48,16 @@ let main _ =
         |> List.map int32
         |> List.sort
 
-    let input_head, input_tail =
-        List.head inputs, List.tail inputs
-
-    let total_weight =
+    let totalWeight =
         inputs
         |> List.sum
 
-    printfn "Total package weight = %i" total_weight
+    genPackageArrangements (totalWeight / 3) [] inputs (fun _ -> Seq.empty) Int32.MaxValue
+    |> findMinimalArrangement
+    |> printfn "Part 1 answer = %i\n"
 
-    assert (inputs |> List.distinct |> List.length = (inputs |> List.length))
-
-    let combinations_part1 =
-        find (total_weight / 3) [] inputs
-        |> List.ofSeq
-
-    combinations_part1
-    |> List.length
-    |> printfn "List length = %i"
-
-    let min_length_part1 =
-        combinations_part1
-        |> List.map List.length
-        |> List.min
-
-    printfn "Min number of packages = %A" min_length_part1
-
-    combinations_part1
-    |> List.filter (fun x -> min_length_part1 = List.length x)
-    |> List.map ((List.map int64) >> (List.reduce (*)))
-    |> List.min
-    |> printfn "Part 1 answer = %A\n\n"
-
-
-    let combinations_part2 =
-        find (total_weight / 4) [] inputs
-        |> List.ofSeq
-
-    combinations_part2
-    |> List.length
-    |> printfn "List length = %i"
-
-    let min_length_part2 =
-        combinations_part2
-        |> List.map List.length
-        |> List.min
-
-    printfn "Min number of packages = %A" min_length_part2
-
-    combinations_part2
-    |> List.filter (fun x -> min_length_part2 = List.length x)
-    |> List.map ((List.map int64) >> (List.reduce (*)))
-    |> List.min
-    |> printfn "Part 2 answer = %A"
-
+    genPackageArrangements (totalWeight / 4) [] inputs (fun _ -> Seq.empty) Int32.MaxValue
+    |> findMinimalArrangement
+    |> printfn "Part 2 answer = %i"
 
     0

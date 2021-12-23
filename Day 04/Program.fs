@@ -3,7 +3,9 @@ open System
 open System.Text
 open System.Security.Cryptography
 
-
+// Here we've implemented this as a class.
+// However, the more idiomatic approach would to have been to use
+// a function factory that utilizes a closure.
 type MD5Hasher (prefix: string) =
     let md5 = MD5.Create()
     let inputBuilder = StringBuilder()

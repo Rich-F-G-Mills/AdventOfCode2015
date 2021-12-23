@@ -7,10 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Program.fs" />
     <Content Include="Inputs.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Compile Include="Program.fs" />
   </ItemGroup>
 
   <ItemGroup />

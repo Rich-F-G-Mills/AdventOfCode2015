@@ -30,14 +30,14 @@ module Spell =
         { Mana = 0; ManaCost = 0; HitPoints = 0; Armour = 0; BossHitPoints = 0 }
 
 
-    let instantSpellFactory (name: string) impact =
+    let instantSpellFactory name impact =
         Applicator (fun time ->
             if time = 0 then
                 ApplyAndCease impact
             else
-                failwith $"Cannot cast ${name} for longer than a single turn.")
+                failwith <| sprintf "Cannot cast %s for longer than a single turn." name)
 
-    let continuousSpellFactory (name: string) (duration: int) initialImpact residualImpact =
+    let continuousSpellFactory name duration initialImpact residualImpact =
         Applicator (fun time ->
             if time = 0 then
                 Apply initialImpact
@@ -49,7 +49,7 @@ module Spell =
                 ApplyAndCease residualImpact
 
             else
-                failwith $"Cannot cast {name} for longer than {duration} turns.")
+                failwith <| sprintf "Cannot cast %s for longer than %i turns." name duration)
             
 
 module MagicMissile =

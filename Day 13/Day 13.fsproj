@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
-    <RootNamespace>Day_9</RootNamespace>
+    <TargetFramework>net5.0</TargetFramework>
+    <RootNamespace>Day_13</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,6 +13,8 @@
     <Compile Include="Program.fs" />
   </ItemGroup>
 
-  <ItemGroup />
+  <ItemGroup>
+    <PackageReference Include="FSharpx.Extras" Version="3.0.0" />
+  </ItemGroup>
 
 </Project>

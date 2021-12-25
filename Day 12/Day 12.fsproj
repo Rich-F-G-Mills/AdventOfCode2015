@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp3.1</TargetFramework>
-    <RootNamespace>Day_9</RootNamespace>
+    <TargetFramework>net5.0</TargetFramework>
+    <RootNamespace>Day_12</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

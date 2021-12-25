@@ -276,33 +276,42 @@ let updateGameStateForBoss = function
     | _ -> failwith "Cannot update a game that has already finished."
 
 
-let rec generateGames = function
-    | ActiveGame innerState as activeState, depth when depth < 25 && innerState.ManaSpent < 1500 ->
-        seq {
-            yield! iterateGame (activeState, Spell.MagicMissile, depth + 1)
-            yield! iterateGame (activeState, Spell.Drain, depth + 1)
-            yield! iterateGame (activeState, Spell.Poison, depth + 1)
-            yield! iterateGame (activeState, Spell.Recharge, depth + 1)
-            yield! iterateGame (activeState, Spell.Shield, depth + 1)
-        }           
+let rec generateGames startingState minManaSpent (cont: int -> int) =
+    match startingState with
+    | ActiveGame innerState as activeState when innerState.ManaSpent < minManaSpent ->
+        let contShield mms =
+            iterateGame activeState Spell.Shield mms cont
+
+        let contRecharge mms =
+            iterateGame activeState Spell.Recharge mms contShield
+
+        let contPoison mms =
+            iterateGame activeState Spell.Poison mms contRecharge
+
+        let contDrain mms =
+            iterateGame activeState Spell.Drain mms contPoison
+
+        iterateGame activeState Spell.MagicMissile minManaSpent contDrain               
                 
-    | PlayerWonGame manaSpent, depth ->
-        Seq.singleton (manaSpent, depth)
+    | PlayerWonGame manaSpent ->
+        cont <| Math.Min(manaSpent, minManaSpent)
 
-    | _ -> Seq.empty
+    | ActiveGame _ | BossWonGame | InvalidGame _ ->
+        cont minManaSpent
 
-and iterateGame (gameState, newSpell, depth) =
+and iterateGame gameState newSpell minManaSpent (cont: int -> int) =
     match updateGameStateForPlayer newSpell gameState with
     | ActiveGame _ as newActiveState ->
         let newStateAfterBoss =
             updateGameStateForBoss newActiveState
 
-        generateGames (newStateAfterBoss, depth + 1)
+        generateGames newStateAfterBoss minManaSpent cont
 
     | PlayerWonGame manaSpent ->
-        Seq.singleton (manaSpent, depth)
+        cont <| Math.Min(manaSpent, minManaSpent)
 
-    | _ -> Seq.empty   
+    | BossWonGame | InvalidGame _ ->
+        cont minManaSpent
 
 
 [<EntryPoint>]
@@ -319,15 +328,13 @@ let main _ =
           ActiveSpells = []
           Difficulty = Normal }
 
-    generateGames (ActiveGame startingState, 0)
-    |> Seq.min
-    |> printfn "Part 1 answer = %A\n"
+    generateGames (ActiveGame startingState) Int32.MaxValue id
+    |> printfn "Part 1 answer = %i\n"
 
     let hardStartingState =
         { startingState with Difficulty = Hard }
     
-    generateGames (ActiveGame hardStartingState, 0)
-    |> Seq.min
-    |> printfn "Part 2 answer = %A"
+    generateGames (ActiveGame hardStartingState) Int32.MaxValue id
+    |> printfn "Part 2 answer = %i"
 
     0

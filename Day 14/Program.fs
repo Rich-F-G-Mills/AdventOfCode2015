@@ -1,23 +1,8 @@
 ﻿
-open System
 open System.IO
 open System.Text.RegularExpressions
 open FSharpx
 open FSharpx.Text
-
-
-module Array =
-    let zipN (seqs: seq<_> []) =
-        seq {
-            let iters =
-                seqs 
-                |> Seq.map (fun s -> s.GetEnumerator ())
-                |> Array.ofSeq
-
-            // Assumes infinite sequences!
-            while true do
-                yield Array.init iters.Length (fun idx -> iters.[idx].Current)
-        }
 
 
 let [<Literal>] Pattern =
@@ -28,6 +13,7 @@ type Reindeer =
       Speed: int
       FlyDuration: int
       RestDuration: int }
+
 
 let rec projectReindeer reindeer =
     seq {
@@ -52,6 +38,7 @@ let main _ =
             | _ -> failwith "Unable to parse.")
         |> Array.map projectReindeer
 
+    // Represents the distances travelled for all reindeers at all relevant time indices.
     let distances =
         reindeers
         |> Array.mapi (fun rIdx vs ->
@@ -69,6 +56,7 @@ let main _ =
     |> Array.max
     |> printfn "Part 1 answer = %i\n"
 
+    // Represents the maximum distance travelled by reindeers across all time indices.
     let maxDistByTime =
         distances
         |> Array.groupBy (fun (_, tIdx, _) -> tIdx)
